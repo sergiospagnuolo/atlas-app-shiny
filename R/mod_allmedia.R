@@ -12,9 +12,7 @@ mod_allmedia_server <- function(id, base) {
       
       all_media <- reactive({
         
-        main_table <- newsatlasbr::organizations_state(uf = "all") %>%
-          filter(eh_jornal == 1) %>%
-          select(id, nome_veiculo, fonte, segmento, municipio, codmun, uf, regiao, num_funcionarios, periodicity, ativo, data_inclusao) 
+        main_table <- main_table <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSQukkKzPoYCfw8y7jyLcKF9bYi_NPlTjqeLeGaoPLOdr7GnBkjN_zoFGLw6GHjPsqLXV6O2ERXJX3a/pub?gid=0&single=true&output=csv", show_col_types = FALSE)
         
 
         return(main_table)
