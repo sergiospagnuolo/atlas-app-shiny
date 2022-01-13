@@ -5,9 +5,9 @@ account: nucleojor
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5393480
-bundleId: 5453077
+bundleId: 5462481
 url: https://nucleojor.shinyapps.io/atlas/
-when: 1641839051.71069
-lastSyncTime: 1641839051.71071
+when: 1642027243.79517
+lastSyncTime: 1642027243.79518
 asMultiple: FALSE
 asStatic: FALSE

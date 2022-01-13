@@ -389,3 +389,15 @@ margin: 10px 0;
     margin: 0 0 5px 0;
   }
 }
+
+.dataTables_length > label{
+  font-weight: 400;
+}
+
+.dataTables_length{
+  float: right !important;
+}
+
+.button.dt-button{
+  border: 1px solid #008596 !important;
+}

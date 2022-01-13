@@ -11,12 +11,9 @@ mod_allmedia_server <- function(id, base) {
       ##### PREPARAR BASE
       
       all_media <- reactive({
-        
         main_table <- main_table <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSQukkKzPoYCfw8y7jyLcKF9bYi_NPlTjqeLeGaoPLOdr7GnBkjN_zoFGLw6GHjPsqLXV6O2ERXJX3a/pub?gid=0&single=true&output=csv", show_col_types = FALSE)
         
-
         return(main_table)
-        
       })
       
       ##########
@@ -39,9 +36,9 @@ mod_allmedia_server <- function(id, base) {
           main_table <- main_table[main_table$regiao == input$regiao,]
         }
         
-        if (input$uf != "Todas UFs") {
+        suppressMessages(if (input$uf != "Todas UFs") {
           main_table <- main_table[main_table$uf == input$uf,]
-        }
+        })
         
         if(input$busca_cidade != ""){
           main_table <- main_table %>% 
@@ -59,6 +56,23 @@ mod_allmedia_server <- function(id, base) {
         
       })
       
+      output$estados = renderUI({
+        
+        ns <- session$ns
+        
+        main_table <- all_media()
+        
+        if (input$regiao != "Todas regiões") {
+          main_table <- main_table[main_table$regiao == input$regiao,]
+        }
+        selectizeInput(inputId = ns("uf"), 
+                        #multiple = TRUE,
+                    label = tags$div(icon("map-marker-alt", class = "icons"),
+                                     'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Escolha um ou mais UFs.")),
+                    choices  = c("Todas UFs", as.list(unique(main_table$uf))),
+                    selected = "Todas UFs")
+      })
+      
       ##########
       # TABELA PRINCIPAL
       
@@ -69,6 +83,16 @@ mod_allmedia_server <- function(id, base) {
         
         main_table$ativo <- gsub(1, "Ativo", main_table$ativo)
         main_table$ativo <- gsub(0, "Fechado", main_table$ativo)
+        
+        main_table$periodicity <- gsub("another", "outra", main_table$periodicity)
+        main_table$periodicity <- gsub("bimonthly", "bimestral", main_table$periodicity)
+        main_table$periodicity <- gsub("biweekly", "bissemanal", main_table$periodicity)
+        main_table$periodicity <- gsub("continuous", "contínua", main_table$periodicity)
+        main_table$periodicity <- gsub("daily", "diária", main_table$periodicity)
+        main_table$periodicity <- gsub("fortnightly", "quinzenal", main_table$periodicity)
+        main_table$periodicity <- gsub("monthly", "mensal", main_table$periodicity)
+        main_table$periodicity <- gsub("undefined", "não definida", main_table$periodicity)
+        main_table$periodicity <- gsub("weekly", "semanal", main_table$periodicity)
         
         
         # Filtros 
@@ -83,10 +107,10 @@ mod_allmedia_server <- function(id, base) {
         if (input$regiao != "Todas regiões") {
           main_table <- main_table[main_table$regiao == input$regiao,]
         }
-        
-        if (input$uf != "Todas UFs") {
+
+        suppressMessages(if (input$uf != "Todas UFs") {
           main_table <- main_table[main_table$uf == input$uf,]
-        }
+        })
         
         if(input$busca_cidade != ""){
           main_table <- main_table %>% 
@@ -102,26 +126,43 @@ mod_allmedia_server <- function(id, base) {
         #separate(link, into = c("Site", "Facebook", "Instagram", "Twitter"), sep=", ")
         
         # Gera a tabela principal
+        
         main_table
         
       }, escape = FALSE,
-      colnames = c('id', 'Nome do Veículo', 'Fonte', 'Segmento', 'Município', 'Cód Mun. (IBGE)', 'UF', 'Região', 'Núm. Funcionários', 'Periodicidade', 'Ativo', 'Data de Atualização'),
+      colnames = c('id', 'Nome do Veículo', 'Fonte', 'Segmento', 'Município', 'Cód Mun. (IBGE)', 'UF', 'Região', 'Núm. Funcionários', 'Periodicidade', 'Ativo', 'Data de Atualização', 'Data de Fechamento'),
+      extensions = c("Buttons"), 
       rownames = FALSE,
       # CONFIGURACOES GERAIS DA TABELA
       options = list(
         #language = list(searchPlaceholder = "Busca por palavra-chave...",
         #              zeroRecords = "Não há resultados para a sua busca.",
         #             sSearch = ""),
-        pageLength = 100,
-        #dom = "ftipr",
-        dom = "tipr",
-        
+        pageLength = 50,
+        lengthMenu = list( c(10, 50, -1) # declare values
+                           , c(10, 50, "Todos") # declare titles
+        ),
+        dom = 'Blrtip',
+        buttons = 
+          list('copy', list(
+            extend = 'collection',
+            buttons = c('csv', 'excel'),
+            text = 'Baixe os dados',
+            exportOptions = list(
+              modifiers = list(selected = TRUE)
+            )
+          )),
         language = list(
-          #emptyTable = "INICIE SUA BUSCA POR TERMOS DE PESQUISA",
+          lengthMenu = "Mostrando _MENU_ registros",
+          buttons = list(copy = 'Copiar tabela', 
+                         copyTitle = "Tabela copiada com sucesso", 
+                         copySuccess = "%d linhas copiadas"),
+          info = 'FONTE: Atlas da Notícia',
+          paginate = list(previous = 'Anterior', `next` = 'Próxima'),
+          processing = "CARREGANDO OS DADOS...",
+          emptyTable = "INICIE SUA BUSCA POR TERMOS DE PESQUISA",
           zeroRecords = "SEM RESULTADOS PARA MOSTRAR, FAÇA NOVA BUSCA"),
-        searchHighlight = TRUE,
-        info = FALSE,
-        lengthMenu = list(c(10, 50, 100, 1000), c('10', '50', '100', '1000'))
+        info = TRUE
         )
       
       # Fecha DT::datatable
@@ -186,66 +227,9 @@ mod_allmedia_ui <- function(id){
            ),
            
            # SELECIONA UNIDADES FEDERATIVAS
-           conditionalPanel(condition = "input.regiao != 'Todas regiões'", 
-                            ns = ns,
-                            # NORDESTE
-                            conditionalPanel(condition = "input.regiao == 'Nordeste'", 
-                                             ns = ns,
-                            column(2,
-                                   selectInput(inputId = ns("uf"),
-                                   label = tags$div(icon("map-marker-alt", class = "icons"),
-                                        'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Filtre por UFs.")),
-                       choices = c("Todas UFs",
-                         "AL", "BA",	"CE",	"MA",	"PB",	"PE",	"PI",	"RN",	"SE")
-                             ))
-                             # FECHAR NORDESTE
-                             ),
-                           # NORTE
-                           conditionalPanel(condition = "input.regiao == 'Norte'", 
-                                        ns = ns,
-                                        column(2,
-                                       selectInput(inputId = ns("uf"),
-                                                   label = tags$div(icon("map-marker-alt", class = "icons"),
-                                                                    'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Filtre por UFs.")),
-                                       choices = c("Todas UFs",                                                               "AC", "AM",	"AP",	"PA",	"PB",	"RO",	"RR",	"TO")
-                                               ))
-                                        # FECHAR NORTE
-                       ),
-                       # CENTRO-OESTE
-                       conditionalPanel(condition = "input.regiao == 'Centro-Oeste'", 
-                                        ns = ns,
-                                        column(2,
-                                               selectInput(inputId = ns("uf"),
-                                                           label = tags$div(icon("map-marker-alt", class = "icons"),
-                                                                            'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Filtre por UFs.")),
-                                                           choices = c("Todas UFs",                                                               "DF", "GO", "MS",	"MT")
-                                               ))
-                                        # FECHAR CENTRO-OESTE
-                       ),
-                       # SUDESTE
-                       conditionalPanel(condition = "input.regiao == 'Sudeste'", 
-                                        ns = ns,
-                                        column(2,
-                                               selectInput(inputId = ns("uf"),
-                                                           label = tags$div(icon("map-marker-alt", class = "icons"),
-                                                                            'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Filtre por UFs.")),
-                                                           choices = c("Todas UFs",                                                               "ES", "MG", "RJ",	"SP")
-                                               ))
-                                        # FECHAR SUDESTE
-                       ),
-                       # SUL
-                       conditionalPanel(condition = "input.regiao == 'Sul'", 
-                                        ns = ns,
-                                        column(2,
-                                               selectInput(inputId = ns("uf"),
-                                                           label = tags$div(icon("map-marker-alt", class = "icons"),
-                                                                            'Unidade Federativa', tags$br(), tags$span(style="font-weight:300;font-size:0.7em;line-height:1.3em", "Filtre por UFs.")),
-                                                           choices = c("Todas UFs",                                                               "PR", "RS", "SC")
-                                               ))
-                                        # FECHAR SUL
-                       ),
-                   # FECHA CONDITIONAL MAIOR
-                   )
+           conditionalPanel(condition = "input.regiao != 'Todas regiões'",
+                             ns = ns,
+             column(2,uiOutput(ns('estados'))))
            ),
            
            #BUSCADORES TEXTUAIS

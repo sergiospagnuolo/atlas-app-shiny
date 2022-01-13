@@ -40,7 +40,7 @@ waiting_screen <- tagList(
     max-width: 450px;
     z-index:100;",
       spin_fading_circles(),
-      h2("Espere um pouco, estamos carregando os dados")
+      h2("Carregando os dados")
   )
 )
 
@@ -111,9 +111,9 @@ server <- function(input, output, session){
   #mod_tweets_server("tweets", monitor_db)
   #mod_profile_server("profiles", monitor_db)
   
-  Sys.sleep(2)
+  Sys.sleep(1)
   waiter_update(html = atualiza)
-  Sys.sleep(3)
+  Sys.sleep(2)
   waiter_hide() # esconde carregador
   
 }

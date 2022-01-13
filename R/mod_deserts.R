@@ -25,15 +25,6 @@ mod_deserts_server <- function(id, base) {
       })
       
       ##########
-      # MENSAGEM COM DESCRICAO DA SELECAO
-      
-      output$basics <- renderText({
-        
-        paste("Seus filtros resultaram em XX veículos.")
-        
-      })
-      
-      ##########
       # TABELA PRINCIPAL
       
       output$table <- DT::renderDataTable(DT::datatable({
@@ -49,6 +40,11 @@ mod_deserts_server <- function(id, base) {
         if (input$status == "Não desertos") {
           main_table <- desert_status()[['nao_desertos']]
         }
+        
+        if (input$regiao != "Todas regiões") {
+          main_table <- main_table[main_table$regiao == input$regiao,]
+        }
+        
         
         #unnest_wider(media_channels, names_repair = 'unique') %>%
         #separate(link, into = c("Site", "Facebook", "Instagram", "Twitter"), sep=", ")
@@ -98,14 +94,23 @@ mod_deserts_ui <- function(id){
     tags$div(
       ### TABELA PRINCIPAL
       column(12,
-             selectInput(inputId = ns("status"),
+             column(2,selectInput(inputId = ns("status"),
                          label = tags$div(icon("map-marker-alt", class = "icons"),
-                                          'Status do município'),
+                                          'Status do município', tags$br(), tags$span(style="font-weight:300;font-size:0.8em;line-height:1.3em", "Filtre por status")),
                          c("Desertos",
                            "Quase desertos",
-                           "Não desertos")),
+                           "Não desertos"))),
+             column(2,selectInput(inputId = ns("regiao"),
+                                  selected = "Todas regiões",
+                         label = tags$div(icon("map-marker", class = "icons"),
+                                          'Região', tags$br(), tags$span(style="font-weight:300;font-size:0.8em;line-height:1.3em", "Filtre por região.")),
+                         choices = c("Todas regiões",
+                                     "Centro-Oeste",
+                                     "Nordeste",
+                                     "Norte",
+                                     "Sudeste",
+                                     "Sul"))),
              # results
-             tags$p(include_spinner_small(ns("basics"))),
              include_spinner_tables(ns("table"))
       )
       

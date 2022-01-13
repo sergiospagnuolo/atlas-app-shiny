@@ -8,7 +8,7 @@ atlas_signin(email = "dados@voltdata.info", password = "senhatokenaberto")
 dados <- newsatlasbr::organizations_state(uf = "all") 
 
 dados <- dados %>% filter(eh_jornal == 1) %>%
-  select(id, nome_veiculo, fonte, segmento, municipio, codmun, uf, regiao, num_funcionarios, periodicity, ativo, data_inclusao)
+  select(id, nome_veiculo, fonte, segmento, municipio, codmun, uf, regiao, num_funcionarios, periodicity, ativo, data_inclusao, data_fechamento)
 
 inativos <- dados %>%
   filter(eh_jornal == 1 & ativo == 0) %>%
@@ -48,4 +48,10 @@ blogs <- ativos %>%
 write_clip(regioes %>% 
              inner_join(blogs, by = "regiao", suffix = c(" veiculos", " blogs") ) %>%
              mutate(pct_blogs = round((`n blogs`/`n veiculos`)*100,1)))
-s
+
+
+contagem_segmento <- dados %>%
+  group_by(segmento) %>%
+  count()
+
+ggplot(contagem_segmento, aes(segmento,n)) + geom_bar(stat = "identity")
